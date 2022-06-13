@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/kcmoon/tinyapp/issues"
   },
-  "homepage": "https://github.com/kcmoon/tinyapp#readme"
+  "homepage": "https://github.com/kcmoon/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.1"
+  }
 }
