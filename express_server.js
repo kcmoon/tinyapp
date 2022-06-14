@@ -23,6 +23,17 @@ let generateRandomString = function() {
   return result;
 };
 
+app.post('/urls/:shortURL/delete', (req, res) =>{
+  delete urlDatabase[req.params.shortURL];
+  res.redirect(`/urls`);
+});
+
+app.post("/urls", (req, res) => {
+  const newShortURL = generateRandomString();
+  urlDatabase[newShortURL] = req.body.longURL;
+  res.redirect(`/urls/${newShortURL}`);
+});
+
 app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
@@ -43,11 +54,6 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-app.post("/urls", (req, res) => {
-  const newShortURL = generateRandomString();
-  urlDatabase[newShortURL] = req.body.longURL;
-  res.redirect(`/urls/${newShortURL}`);
-});
 
 app.get("/", (req, res) => {
   res.send("Hello!");
