@@ -1,7 +1,7 @@
 
 const express = require("express");
 const app = express();
-const PORT = 8080; 
+const PORT = 8080;
 const bodyParser = require('body-parser');
 
 app.use(bodyParser.urlencoded({extended: true}));
@@ -13,7 +13,7 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-function generateRandomString() {
+let generateRandomString = function() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
   let result = '';
@@ -38,15 +38,15 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL
+  const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
   res.redirect(longURL);
 });
 
 app.post("/urls", (req, res) => {
-  const newShortURL = generateRandomString()
-  urlDatabase[newShortURL] = req.body.longURL
-  res.redirect(`/urls/${newShortURL}`)
+  const newShortURL = generateRandomString();
+  urlDatabase[newShortURL] = req.body.longURL;
+  res.redirect(`/urls/${newShortURL}`);
 });
 
 app.get("/", (req, res) => {
@@ -58,7 +58,7 @@ app.get('/urls.json', (req, res) => {
 });
 
 app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b></body></html>\n')
+  res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
 app.listen(PORT, () => {
