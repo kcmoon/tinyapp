@@ -12,11 +12,12 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
 function generateRandomString() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
   let result = '';
-  for (let i = 0; i < 7 i++) {
+  for (let i = 0; i < 7; i++) {
     result += characters.charAt(Math.floor(Math.random() * 62));
   }
   return result;
@@ -37,8 +38,10 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  const newShortURL = generateRandomString()
+  
+  urlDatabase[newShortURL] = req.body.longURL
+  res.redirect('/urls')
 });
 
 app.get("/", (req, res) => {
