@@ -57,6 +57,12 @@ app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
+app.post('/login', (req, res) => {
+  let username = req.body.username;
+  res.cookie('username', username);
+  res.redirect('/urls');
+});
+
 app.post("/urls/:shortURL", (req, res) => {
   let shortURL = req.params.shortURL;
   urlDatabase[shortURL] = req.body.longURL;
