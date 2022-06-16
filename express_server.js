@@ -54,6 +54,21 @@ const checkForEmail = function(email) {
   return false;
 };
 
+const getPasswordByEmail = function(email) {
+  for (let user in users) {
+    if (users[user]['email'] === email) {
+      return users[user]['password'];
+    }
+  }
+};
+
+const getIdByEmail = function(email) {
+  for (let user in users) {
+    if (users[user]['email'] === email) {
+      return users[user];
+    }
+  }
+};
 
 // ROUTES
 app.get("/", (req, res) => {
@@ -67,9 +82,9 @@ app.get('/register', (req, res) => {
 
 app.post('/register', (req, res) => {
   if (req.body.email === '' || req.body.password === '') {
-    return res.status(400).send('Cannot process request. Please enter valid email and password.')
+    return res.status(400).send('Cannot process request. Please enter valid email and password.');
   } else if (checkForEmail(req.body.email)) {
-    return res.status(400).send('Email already registered.')
+    return res.status(400).send('Email already registered.');
   } else {let newEmail = req.body.email;
     let newPassword = req.body.password;
     let newId = generateRandomString();
@@ -89,6 +104,17 @@ app.get('/login', (req, res) => {
   const templateVars = {user: users[req.cookies["user_id"]]}
   res.render('login', templateVars)
 })
+
+app.post('/login', (req, res) => {
+  if (checkForEmail(req.body.email) === false) {
+    return res.status(403).send('Email is not registered to an account.');
+  }
+  if (getPasswordByEmail(req.body.email) !== req.body.password) {
+    return res.status(403).send('Password is incorrect.');
+  }
+  res.cookie("user_id", getIdByEmail(req.body.email));
+  res.redirect('/urls');
+});
 
 app.get('/urls/new', (req, res) => {
   const templateVars = {
@@ -146,13 +172,6 @@ app.post('/logout', (req, res) => {
   res.clearCookie('user_id', undefined);
   res.redirect('/urls');
 });
-
-app.post('/login', (req, res) => {
-  let username = req.body.username;
-  res.cookie('username', username);
-  res.redirect('/urls');
-});
-
 
 app.post('/urls/:shortURL/delete', (req, res) =>{
   delete urlDatabase[req.params.shortURL];
