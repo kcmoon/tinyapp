@@ -6,6 +6,7 @@ const PORT = 8080;
 const bodyParser = require('body-parser');
 const cookieParser = require("cookie-parser");
 const { cookie } = require("express/lib/response");
+const req = require("express/lib/request");
 
 
 // MIDDLEWARE
@@ -34,7 +35,7 @@ const users = {
   }
 };
 
-let generateRandomString = function() {
+const generateRandomString = function() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
   let result = '';
@@ -42,6 +43,15 @@ let generateRandomString = function() {
     result += characters.charAt(Math.floor(Math.random() * 62));
   }
   return result;
+};
+
+const checkForEmail = function(email) {
+  for (let user in users) {
+    if(users[user]['email'] === email) {
+      return true;
+    }
+  }
+  return false;
 };
 
 
@@ -56,18 +66,23 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-  let newEmail = req.body.email;
-  let newPassword = req.body.password;
-  let newId = generateRandomString();
-  console.log('users before', users);
-  users[newId] = {
-    id: newId, email: 
-    newEmail, 
-    password: newPassword
+  if (req.body.email === '' || req.body.password === '') {
+    return res.status(400).send('Cannot process request. Please enter valid email and password.')
+  } else if (checkForEmail(req.body.email)) {
+    return res.status(400).send('Email already registered.')
+  } else {let newEmail = req.body.email;
+    let newPassword = req.body.password;
+    let newId = generateRandomString();
+    console.log('users before', users, "request.body", req.body);
+    users[newId] = {
+      id: newId, 
+      email: newEmail, 
+      password: newPassword
+    };
+    console.log('users after new user', users)
+    res.cookie("user_id", newId);
+    res.redirect('/urls')
   };
-  console.log('users after new user', users)
-  res.cookie("user_id", newId);
-  res.redirect('/urls')
 });                                              
 
 app.get('/urls/new', (req, res) => {
@@ -123,7 +138,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('username', undefined);
+  res.clearCookie('user_id', undefined);
   res.redirect('/urls');
 });
 

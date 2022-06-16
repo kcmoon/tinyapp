@@ -10,10 +10,10 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <% if (username === undefined) { %>
+    <% if (user === undefined) { %>
     <form class="form-inline" action="/login" method="POST">
       <div class="form-group mb-2">
-        <label for="longURL">Enter Username:</label>
+        <label for="longURL">Please Log In:</label>
         <input class="form-control" type="text" name="username" style="width: 200px; margin-left: 1em">
         <button type="submit" class="btn btn-dark">Submit</button>
       </div>
@@ -21,7 +21,7 @@
       <% } else { %>
         <form class="form-inline" action="/logout" method="POST">
           <div class="form-group mb-2">
-            <label for="longURL">Signed in as: <%= username %>!</label>
+            <label for="logout">Signed in as: <%= user.email %>!</label>
             <button type="submit" class="btn btn-light">Logout</button>
           </div>
         </form>
