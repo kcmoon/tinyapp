@@ -6,10 +6,7 @@ const PORT = 8080;
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
-const helpers = require('./helpers')
-const { cookie } = require("express/lib/response");
-const req = require("express/lib/request");
-
+const helpers = require('./helpers');
 
 // MIDDLEWARE
 app.use(morgan('dev'));
@@ -17,7 +14,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'yum',
   keys: ['they', 'can', 'be', 'secret'],
-}))
+}));
 app.set('view engine', 'ejs');
 
 
@@ -36,15 +33,19 @@ const users = {
     password: "$2a$10$nJ7.yA1.EFmy9FRiAPoOVuGLMg1c450biXOzNBA.rvS4mnlb2RokW"
   },
   "8hsh7k": {
-    id: "8hsh7k", 
-    email: "l@l.com", 
+    id: "8hsh7k",
+    email: "l@l.com",
     password: "$2a$10$aFDh16KEzSpo66FluQ4aruMj8j093CpuUQACc.huLugp7Yt3bsmqO"
   }
 };
 
 // ROUTES
 app.get("/", (req, res) => {
-  res.redirect('/urls');
+  if (req.session.user_id) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/users.json', (req, res) => {
@@ -63,20 +64,18 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) => {
   if (req.body.email === '' || req.body.password === '') {
     return res.status(400).send('Cannot process request. Please enter valid email and password.');
-  } else if (helpers.checkUserEmails(req.body.email, users)) {
+  } else if (helpers.getUserByEmail(req.body.email, users)) {
     return res.status(400).send('Email already registered.');
   } else {
     let newEmail = req.body.email;
     let newPassword = req.body.password;
-    let hashedPassword = bcrypt.hashSync(newPassword, 10)
+    let hashedPassword = bcrypt.hashSync(newPassword, 10);
     let newId = helpers.generateRandomString();
-    console.log('users before', users, "request.body", req.body);
     users[newId] = {
       id: newId,
       email: newEmail,
       password: hashedPassword
     };
-    console.log('users after new user', users);
     req.session.user_id = newId;
     res.redirect('/urls');
   }
@@ -92,7 +91,7 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  const user = helpers.checkUserEmails(req.body.email, users);
+  const user = helpers.getUserByEmail(req.body.email, users);
   if (!user) {
     return res.status(403).send('Email is not registered to an account.');
   }
@@ -117,6 +116,16 @@ app.get("/urls", (req, res) => {
   const cookieUserID = req.session.user_id;
   const templateVars = {urls: helpers.findURLsById(cookieUserID, urlDatabase), user: users[cookieUserID]};
   res.render("urls_index", templateVars);
+});
+
+app.post("/urls", (req, res) => {
+  const newShortURL = helpers.generateRandomString();
+  if (!req.session.user_id) {
+    res.status(401).send('You must be signed in to access features.');
+  } else {
+    urlDatabase[newShortURL] = {longURL: req.body.longURL, userID: req.session.user_id};
+    res.redirect(`/urls/${newShortURL}`);
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -156,16 +165,6 @@ app.post("/urls/:shortURL", (req, res) => {
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
-});
-
-app.post("/urls", (req, res) => {
-  const newShortURL = helpers.generateRandomString();
-  if (!req.session.user_id) {
-    res.status(401).send('You must be signed in to access features.');
-  } else {
-    urlDatabase[newShortURL] = {longURL: req.body.longURL, userID: req.session.user_id};
-    res.redirect(`/urls/${newShortURL}`);
-  }
 });
 
 app.post('/logout', (req, res) => {

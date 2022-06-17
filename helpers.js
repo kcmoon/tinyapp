@@ -1,4 +1,4 @@
-const checkUserEmails = function(email, database) {
+const getUserByEmail = function(email, database) {
   for (let user in database) {
     if (database[user]['email'] === email) {
       return database[user];
@@ -28,7 +28,7 @@ const generateRandomString = function() {
 };
 
 module.exports = {
-  checkUserEmails,
+  getUserByEmail,
   findURLsById,
   generateRandomString
 };
