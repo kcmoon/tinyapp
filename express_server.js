@@ -6,6 +6,7 @@ const PORT = 8080;
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
+const helpers = require('./helpers')
 const { cookie } = require("express/lib/response");
 const req = require("express/lib/request");
 
@@ -41,35 +42,6 @@ const users = {
   }
 };
 
-const generateRandomString = function() {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-  let result = '';
-  for (let i = 0; i < 7; i++) {
-    result += characters.charAt(Math.floor(Math.random() * 62));
-  }
-  return result;
-};
-
-const checkUserEmails = function(email, database) {
-  for (let user in database) {
-    if (users[user]['email'] === email) {
-      return users[user];
-    }
-  }
-  return null;
-};
-
-const findURLsById = function(userId) {
-  let urlDatabaseById = {};
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === userId) {
-      urlDatabaseById[url] = urlDatabase[url];
-    }
-  }
-  return urlDatabaseById;
-};
-
 // ROUTES
 app.get("/", (req, res) => {
   res.redirect('/urls');
@@ -91,13 +63,13 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) => {
   if (req.body.email === '' || req.body.password === '') {
     return res.status(400).send('Cannot process request. Please enter valid email and password.');
-  } else if (checkUserEmails(req.body.email, users)) {
+  } else if (helpers.checkUserEmails(req.body.email, users)) {
     return res.status(400).send('Email already registered.');
   } else {
     let newEmail = req.body.email;
     let newPassword = req.body.password;
     let hashedPassword = bcrypt.hashSync(newPassword, 10)
-    let newId = generateRandomString();
+    let newId = helpers.generateRandomString();
     console.log('users before', users, "request.body", req.body);
     users[newId] = {
       id: newId,
@@ -120,7 +92,7 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  const user = checkUserEmails(req.body.email, users);
+  const user = helpers.checkUserEmails(req.body.email, users);
   if (!user) {
     return res.status(403).send('Email is not registered to an account.');
   }
@@ -143,13 +115,13 @@ app.get('/urls/new', (req, res) => {
 
 app.get("/urls", (req, res) => {
   const cookieUserID = req.session.user_id;
-  const templateVars = {urls: findURLsById(cookieUserID), user: users[cookieUserID]};
+  const templateVars = {urls: helpers.findURLsById(cookieUserID, urlDatabase), user: users[cookieUserID]};
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const cookieUserID = req.session.user_id;
-  const urlsForUser = findURLsById(cookieUserID);
+  const urlsForUser = helpers.findURLsById(cookieUserID, urlDatabase);
   const shortURL = req.params.shortURL;
   const keysOfDatabase = Object.keys(urlDatabase);
   if (!keysOfDatabase.includes(shortURL)) {
@@ -187,7 +159,7 @@ app.get('/urls.json', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const newShortURL = generateRandomString();
+  const newShortURL = helpers.generateRandomString();
   if (!req.session.user_id) {
     res.status(401).send('You must be signed in to access features.');
   } else {
@@ -203,7 +175,7 @@ app.post('/logout', (req, res) => {
 
 app.post('/urls/:shortURL/delete', (req, res) =>{
   const cookieUserID = req.session.user_id;
-  const urlsForUser = findURLsById(cookieUserID);
+  const urlsForUser = helpers.findURLsById(cookieUserID, urlDatabase);
   if (!cookieUserID) {
     return res.status(401).send('You must be signed-in to modify content.');
   }
