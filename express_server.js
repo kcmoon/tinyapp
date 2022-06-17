@@ -4,6 +4,7 @@ const morgan = require('morgan');
 const app = express();
 const PORT = 8080;
 const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs');
 const cookieParser = require("cookie-parser");
 const { cookie } = require("express/lib/response");
 const req = require("express/lib/request");
@@ -28,12 +29,12 @@ const users = {
   "7afr54": {
     id: "7afr54",
     email: "u@u.com",
-    password: "1234"
+    password: "$2a$10$nJ7.yA1.EFmy9FRiAPoOVuGLMg1c450biXOzNBA.rvS4mnlb2RokW"
   },
   "8hsh7k": {
-    id: "8hsh7k",
-    email: "l@l.com",
-    password: "1234"
+    id: "8hsh7k", 
+    email: "l@l.com", 
+    password: "$2a$10$aFDh16KEzSpo66FluQ4aruMj8j093CpuUQACc.huLugp7Yt3bsmqO"
   }
 };
 
@@ -92,12 +93,13 @@ app.post('/register', (req, res) => {
   } else {
     let newEmail = req.body.email;
     let newPassword = req.body.password;
+    let hashedPassword = bcrypt.hashSync(newPassword, 10)
     let newId = generateRandomString();
     console.log('users before', users, "request.body", req.body);
     users[newId] = {
       id: newId,
       email: newEmail,
-      password: newPassword
+      password: hashedPassword
     };
     console.log('users after new user', users);
     res.cookie("user_id", newId);
@@ -115,11 +117,12 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  let user = checkUserEmails(req.body.email);
+  const user = checkUserEmails(req.body.email);
   if (!user) {
     return res.status(403).send('Email is not registered to an account.');
   }
-  if (user.password !== req.body.password) {
+  const result = bcrypt.compare(req.body.password, user.password);
+  if (result) {
     return res.status(403).send('Password is incorrect.');
   }
   res.cookie("user_id", user.id);
