@@ -18,18 +18,20 @@ app.set('view engine', 'ejs');
 
 // DATA STORES
 const urlDatabase = {
-  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: '222222'},
-  "9sm5xK": {longURL: "http://www.google.com", userID: '111111'}
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: '7afr54'},
+  "9sm5xK": {longURL: "http://www.google.com", userID: '8hsh7k'},
+  "8my8xK": {longURL: "http://www.pinterest.com", userID: '8hsh7k'},
+  "7Gj6rK": {longURL: "http://www.instagram", userID: '8hsh7k'},
 };
 
 const users = {
-  "222222": {
-    id: "222222",
+  "7afr54": {
+    id: "7afr54",
     email: "u@u.com",
     password: "1234"
   },
-  "111111": {
-    id: "111111", 
+  "8hsh7k": {
+    id: "8hsh7k", 
     email: "l@l.com", 
     password: "1234"
   }
@@ -52,6 +54,16 @@ const checkUserEmails = function(email) {
     }
   }
   return null;
+};
+
+const findURLsById = function(userId) {
+  let urlDatabaseById = {};
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === userId) {
+      urlDatabaseById[url] = urlDatabase[url]
+    }
+  }
+  return urlDatabaseById;
 };
 
 const getPasswordByEmail = function(email) {
@@ -140,13 +152,27 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = {urls: urlDatabase, user: users[req.cookies["user_id"]]};
+  const cookieUserID = req.cookies["user_id"];
+  const templateVars = {urls: findURLsById(cookieUserID), user: users[cookieUserID]};
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]]};
+  const cookieUserID = req.cookies["user_id"];
+  const urlsForUser = findURLsById(cookieUserID);
+  const shortURL = req.params.shortURL;
+  const keysOfDatabase = Object.keys(urlDatabase);
+  if (!keysOfDatabase.includes(shortURL)) {
+    res.status(401).send('URL not in Database.');
+  } else if (!cookieUserID) {
+    const templateVars = {user: null};
+    return res.render("urls_show", templateVars);
+  } else if (!urlsForUser[req.params.shortURL]) {
+    return res.status(401).send('URL not in your Database.');
+  } else {
+  const templateVars = {shortURL: req.params.shortURL, longURL: urlsForUser[req.params.shortURL].longURL, user: users[cookieUserID]};
   res.render("urls_show", templateVars);
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -186,6 +212,14 @@ app.post('/logout', (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req, res) =>{
+  const cookieUserID = req.cookies["user_id"];
+  const urlsForUser = findURLsById(cookieUserID);
+  if (!cookieUserID) {
+    return res.status(401).send('You must be signed-in to modify content.');
+  }
+  if (!urlsForUser[req.params.shortURL]) {
+    return res.status(401).send('You are unable to modify a URL not in your Database.');
+  }
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
 });
